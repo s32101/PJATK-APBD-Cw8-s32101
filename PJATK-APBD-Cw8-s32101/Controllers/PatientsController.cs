@@ -16,7 +16,60 @@ public class PatientsController(HospitalContext db) : ControllerBase
         if (search != null)
             patients = patients.Where(p => p.FirstName.Contains(search) || p.LastName.Contains(search));
 
-        return Ok(await patients.ToListAsync(cancellationToken: cancel));
+        var result = await patients
+            .Include(p => p.Admissions)
+                .ThenInclude(ad => ad.Ward)
+            .Include(p => p.BedAssignments)
+            .Select(p => new
+            {
+                p.Pesel,
+                p.FirstName,
+                p.LastName,
+                p.Age,
+                p.Sex,
+                Admissions = p.Admissions.Select(ad => new
+                {
+                    ad.Id,
+                    ad.AdmissionDate,
+                    ad.DischargeDate,
+                    Ward = new
+                    {
+                        Id = ad.WardId,
+                        ad.Ward.Name,
+                        ad.Ward.Description
+                    }
+                }),
+                BedAssignments = p.BedAssignments.Select(ass => new
+                {
+                    ass.Id,
+                    ass.From,
+                    ass.To,
+                    Bed = new
+                    {
+                        ass.Bed.Id,
+                        BedType = new
+                        {
+                            ass.Bed.BedType.Id,
+                            ass.Bed.BedType.Name,
+                            ass.Bed.BedType.Description
+                        },
+                        Room = new
+                        {
+                            ass.Bed.Room.Id,
+                            ass.Bed.Room.HasTv,
+                            Ward = new
+                            {
+                                Id = ass.Bed.Room.Ward,
+                                ass.Bed.Room.Ward.Name,
+                                ass.Bed.Room.Ward.Description
+                            }
+                        }
+                    }
+                })
+            })
+            .ToListAsync(cancellationToken: cancel);
+        
+        return Ok(result);
     }
 
     // [HttpPost("{pesel}/bedassignments")]
