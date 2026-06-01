@@ -18,4 +18,10 @@ public class PatientsController(HospitalContext db) : ControllerBase
 
         return Ok(await patients.ToListAsync(cancellationToken: cancel));
     }
+
+    // [HttpPost("{pesel}/bedassignments")]
+    // public async Task<IActionResult> AssignBed(string pesel, CancellationToken cancel = default)
+    // {
+    //     throw new NotImplementedException();
+    // }
 }
