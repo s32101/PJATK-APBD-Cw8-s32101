@@ -1,6 +1,13 @@
 @PJATK_APBD_Cw8_s32101_HostAddress = http://localhost:5085
 
-GET {{PJATK_APBD_Cw8_s32101_HostAddress}}/weatherforecast/
+# Wszyscy pacjenci
+GET {{PJATK_APBD_Cw8_s32101_HostAddress}}/api/patients
+Accept: application/json
+
+###
+
+# Wyszukiwanie pacjentów
+GET {{PJATK_APBD_Cw8_s32101_HostAddress}}/api/patients?search=an
 Accept: application/json
 
 ###
