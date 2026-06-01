@@ -11,3 +11,30 @@ GET {{PJATK_APBD_Cw8_s32101_HostAddress}}/api/patients?search=an
 Accept: application/json
 
 ###
+
+# Przypisanie łóżka - Example 1
+POST {{PJATK_APBD_Cw8_s32101_HostAddress}}/api/patients/04122098765/bedassignments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "from": "2026-05-20T14:00:00",
+  "to": "2026-05-30T10:00:00",
+  "bedType": "Standard",
+  "ward": "Kardiologia"
+}
+
+###
+
+# Przypisanie łóżka - Example 2
+POST {{PJATK_APBD_Cw8_s32101_HostAddress}}/api/patients/04122098765/bedassignments
+Content-Type: application/json
+Accept: application/json
+
+{
+  "from": "2026-06-01T09:00:00",
+  "bedType": "Intensywna terapia",
+  "ward": "Chirurgia"
+}
+
+###

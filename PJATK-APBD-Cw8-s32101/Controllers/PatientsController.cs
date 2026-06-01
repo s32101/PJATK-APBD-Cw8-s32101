@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PJATK_APBD_Cw8_s32101.DTO;
 using PJATK_APBD_Cw8_s32101.Models;
 
 namespace PJATK_APBD_Cw8_s32101.Controllers;
@@ -72,9 +73,50 @@ public class PatientsController(HospitalContext db) : ControllerBase
         return Ok(result);
     }
 
-    // [HttpPost("{pesel}/bedassignments")]
-    // public async Task<IActionResult> AssignBed(string pesel, CancellationToken cancel = default)
-    // {
-    //     throw new NotImplementedException();
-    // }
+    [HttpPost("{pesel}/bedassignments")]
+    public async Task<IActionResult> AssignBed([FromRoute] string pesel, [FromBody] BedAssignmentsRequestDTO input,
+        CancellationToken cancel = default)
+    {
+        await using var tran = await db.Database.BeginTransactionAsync(cancel);
+        
+        var patient = await db.Patients.FirstOrDefaultAsync(p => p.Pesel == pesel, cancel);
+        if (patient == null)
+            return NotFound("Pacjent nie istnieje");
+        
+        var availableBed = await db.Beds.Include(b => b.Room)
+            .ThenInclude(r => r.Ward)
+            .Include(b => b.BedType)
+            .Include(b => b.BedAssignments)
+            .Where(b => b.BedType.Name == input.BedType && b.Room.Ward.Name == input.Ward &&
+                        !b.BedAssignments.Any(ass =>
+                            // istniejące przypisanie bez końca -> zawsze blokuje
+                            ass.To == null ||
+
+                            // nowe przypisanie bez końca
+                            (input.To == null
+                                ? ass.To > input.From
+
+                                // oba mają zakres
+                                : ass.From < input.To.Value &&
+                                  ass.To > input.From)))
+            .FirstOrDefaultAsync(cancel);
+
+        if (availableBed == null)
+            return NotFound("Łóżko nie jest dostępne");
+        
+        var assignment = new BedAssignment
+        {
+            PatientPesel = pesel,
+            BedId = availableBed.Id,
+            From = input.From,
+            To = input.To
+        };
+
+        db.BedAssignments.Add(assignment);
+
+        await db.SaveChangesAsync(cancel);
+        await tran.CommitAsync(cancel);
+
+        return NoContent();
+    }
 }
